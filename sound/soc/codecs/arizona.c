@@ -1180,6 +1180,27 @@ static int arizona_hw_params_rate(struct snd_pcm_substream *substream,
 	return 0;
 }
 
+static bool arizona_aif_cfg_changed(struct snd_soc_codec *codec,
+				    int base, int bclk, int lrclk, int frame)
+{
+	int val;
+
+	val = snd_soc_read(codec, base + ARIZONA_AIF_BCLK_CTRL);
+	if (bclk != (val & ARIZONA_AIF1_BCLK_FREQ_MASK))
+		return true;
+
+	val = snd_soc_read(codec, base + ARIZONA_AIF_TX_BCLK_RATE);
+	if (lrclk != (val & ARIZONA_AIF1TX_BCPF_MASK))
+		return true;
+
+	val = snd_soc_read(codec, base + ARIZONA_AIF_FRAME_CTRL_1);
+	if (frame != (val & (ARIZONA_AIF1TX_WL_MASK |
+			     ARIZONA_AIF1TX_SLOT_LEN_MASK)))
+		return true;
+
+	return false;
+}
+
 static int arizona_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params,
 			     struct snd_soc_dai *dai)
