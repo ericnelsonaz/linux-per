@@ -553,10 +553,10 @@
 				interrupts = <0 56 0x04>;
 			};
 
-			epit2: epit@020d4000 { /* EPIT2 */
-				reg = <0x020d4000 0x4000>;
-				interrupts = <0 57 0x04>;
-			};
+//			epit2: epit@020d4000 { /* EPIT2 */
+//				reg = <0x020d4000 0x4000>;
+//				interrupts = <0 57 0x04>;
+//			};
 
 			src: src@020d8000 {
 				compatible = "fsl,imx6q-src", "fsl,imx51-src";

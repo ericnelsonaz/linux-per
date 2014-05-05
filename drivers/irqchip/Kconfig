@@ -61,3 +61,11 @@ config VERSATILE_FPGA_IRQ_NR
        int
        default 4
        depends on VERSATILE_FPGA_IRQ
+
+config FIQ_RESEARCH
+	tristate "FIQ research support (devel hack)"
+	depends on SOC_IMX6Q
+	help
+	  This is a development hack, don't use this unless
+	  you know what you are doing.  This code should get
+	  built as a module.

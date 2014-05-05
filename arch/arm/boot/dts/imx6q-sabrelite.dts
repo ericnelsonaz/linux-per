@@ -63,6 +63,15 @@
 		mux-int-port = <1>;
 		mux-ext-port = <4>;
 	};
+
+	soc {
+		fiq@0 {
+			compatible = "denx,fiq";
+			interrupt-parent = <&intc>;
+			interrupts = <0 57 0x01>;
+			status = "okay";
+		};
+	};
 };
 
 &sata {

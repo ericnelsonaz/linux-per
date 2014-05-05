@@ -793,6 +793,7 @@ config SOC_IMX6Q
 	select ARM_GIC
 	select COMMON_CLK
 	select CPU_V7
+	select FIQ
 	select HAVE_ARM_SCU if SMP
 	select HAVE_ARM_TWD if SMP
 	select HAVE_IMX_ANATOP
