@@ -176,19 +176,31 @@ static void gic_unmask_irq(struct irq_data *d)
 
 /*static*/ void gic_set_group_irq(struct irq_data *d, int group)
 {
-	unsigned long flags;
-	unsigned int reg = gic_irq(d) / 32 * 4;
-	u32 mask = 1 << (gic_irq(d) % 32);
-	u32 val;
+	unsigned int grp_reg = (gic_irq(d) / 32) * 4;
+	u32 grp_mask = 1 << (gic_irq(d) % 32);
+	u32 grp_val;
 
-	raw_spin_lock_irqsave(&irq_controller_lock, flags);
-	val = readl_relaxed(gic_dist_base(d) + GIC_DIST_IGROUP + reg);
-	if (group)
-		val |= mask;
-	else
-		val &= ~mask;
-	writel_relaxed(val, gic_dist_base(d) + GIC_DIST_IGROUP + reg);
-	raw_spin_unlock_irqrestore(&irq_controller_lock, flags);
+	unsigned int pri_reg = (gic_irq(d) / 4) * 4;
+	u32 pri_mask = 1 << (7 + ((gic_irq(d) % 4) * 8));
+	u32 pri_val;
+
+	raw_spin_lock(&irq_controller_lock);
+
+	grp_val = readl_relaxed(gic_dist_base(d) + GIC_DIST_IGROUP + grp_reg);
+	pri_val = readl_relaxed(gic_dist_base(d) + GIC_DIST_PRI + pri_reg);
+
+	if (group) {
+		grp_val |= grp_mask;
+		pri_val |= pri_mask;
+	} else {
+		grp_val &= ~grp_mask;
+		pri_val &= ~pri_mask;
+	}
+
+	writel_relaxed(grp_val, gic_dist_base(d) + GIC_DIST_IGROUP + grp_reg);
+	writel_relaxed(pri_val, gic_dist_base(d) + GIC_DIST_PRI + pri_reg);
+
+	raw_spin_unlock(&irq_controller_lock);
 }
 
 /*static*/ int gic_get_group_irq(struct irq_data *d)
@@ -204,9 +216,9 @@ static void gic_unmask_irq(struct irq_data *d)
 static void gic_eoi_irq(struct irq_data *d)
 {
 	if (gic_arch_extn.irq_eoi) {
-		raw_spin_lock(&irq_controller_lock);
+//		raw_spin_lock(&irq_controller_lock);
 		gic_arch_extn.irq_eoi(d);
-		raw_spin_unlock(&irq_controller_lock);
+//		raw_spin_unlock(&irq_controller_lock);
 	}
 
 	writel_relaxed(gic_irq(d), gic_cpu_base(d) + GIC_CPU_EOI);
@@ -322,6 +334,17 @@ static asmlinkage void __exception_irq_entry gic_handle_irq(struct pt_regs *regs
 	do {
 		irqstat = readl_relaxed(cpu_base_ns + GIC_CPU_INTACK);
 		irqnr = irqstat & ~0x1c00;
+
+		if (irqnr == 89) {
+			pr_err("PRI! cpu=%i PMR=%08x BPR=[%08x,a=%08x] RPR=%08x HPPIR=%08x\n",
+				smp_processor_id(),
+				readl(cpu_base + GIC_CPU_PRIMASK),
+				readl(cpu_base + GIC_CPU_BINPOINT),
+				readl(cpu_base + 0x1c),
+				readl(cpu_base + GIC_CPU_RUNNINGPRI),
+				readl(cpu_base + GIC_CPU_HIGHPRI));
+			continue;
+		}
 
 		if (likely(irqnr > 15 && irqnr < 1021)) {
 			irqnr = irq_find_mapping(gic->domain, irqnr);
@@ -890,6 +913,8 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 #ifdef CONFIG_OF
 static int gic_cnt __initdata;
 
+extern void init_FIQ(int);
+
 int __init gic_of_init(struct device_node *node, struct device_node *parent)
 {
 	void __iomem *cpu_base;
@@ -915,7 +940,12 @@ int __init gic_of_init(struct device_node *node, struct device_node *parent)
 		irq = irq_of_parse_and_map(node, 0);
 		gic_cascade_irq(gic_cnt, irq);
 	}
+	if (!gic_cnt) {
+		init_FIQ(0);
+	}
+
 	gic_cnt++;
+
 	return 0;
 }
 IRQCHIP_DECLARE(cortex_a15_gic, "arm,cortex-a15-gic", gic_of_init);
