@@ -40,6 +40,7 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/seq_file.h>
+#include <linux/irq.h>
 
 #include <asm/cacheflush.h>
 #include <asm/cp15.h>
@@ -139,6 +140,15 @@ void disable_fiq(int fiq)
 	disable_irq(fiq + fiq_start);
 }
 
+void eoi_fiq(int fiq)
+{
+	struct irq_data *irq_data = irq_get_irq_data(fiq + fiq_start);
+	struct irq_chip *chip = irq_data_get_irq_chip(irq_data);
+
+	if (chip->irq_eoi)
+			chip->irq_eoi(irq_data);
+}
+
 EXPORT_SYMBOL(set_fiq_handler);
 EXPORT_SYMBOL(__set_fiq_regs);	/* defined in fiqasm.S */
 EXPORT_SYMBOL(__get_fiq_regs);	/* defined in fiqasm.S */
@@ -146,6 +156,7 @@ EXPORT_SYMBOL(claim_fiq);
 EXPORT_SYMBOL(release_fiq);
 EXPORT_SYMBOL(enable_fiq);
 EXPORT_SYMBOL(disable_fiq);
+EXPORT_SYMBOL(eoi_fiq);
 
 void __init init_FIQ(int start)
 {
