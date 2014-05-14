@@ -174,6 +174,33 @@ static void gic_unmask_irq(struct irq_data *d)
 	raw_spin_unlock(&irq_controller_lock);
 }
 
+/*static*/ void gic_set_group_irq(struct irq_data *d, int group)
+{
+	unsigned long flags;
+	unsigned int reg = gic_irq(d) / 32 * 4;
+	u32 mask = 1 << (gic_irq(d) % 32);
+	u32 val;
+
+	raw_spin_lock_irqsave(&irq_controller_lock, flags);
+	val = readl_relaxed(gic_dist_base(d) + GIC_DIST_IGROUP + reg);
+	if (group)
+		val |= mask;
+	else
+		val &= ~mask;
+	writel_relaxed(val, gic_dist_base(d) + GIC_DIST_IGROUP + reg);
+	raw_spin_unlock_irqrestore(&irq_controller_lock, flags);
+}
+
+/*static*/ int gic_get_group_irq(struct irq_data *d)
+{
+	unsigned int reg = gic_irq(d) / 32 * 4;
+	u32 mask = 1 << (gic_irq(d) % 32);
+	u32 val;
+
+	val = readl_relaxed(gic_dist_base(d) + GIC_DIST_IGROUP + reg);
+	return !!(val & mask);
+}
+
 static void gic_eoi_irq(struct irq_data *d)
 {
 	if (gic_arch_extn.irq_eoi) {

@@ -41,6 +41,7 @@
 #include <linux/interrupt.h>
 #include <linux/seq_file.h>
 #include <linux/irq.h>
+#include <linux/irqchip/arm-vic.h>
 
 #include <asm/cacheflush.h>
 #include <asm/cp15.h>
@@ -130,14 +131,52 @@ void release_fiq(struct fiq_handler *f)
 
 static int fiq_start;
 
+/* These hacks use backdoors into the interrupt controller to perform FIQ/IRQ
+ * routing. These hacks are nasty and completely incompatible with (working)
+ * multiarch kernels. Additionally these hacks don't count enable/disable
+ * properly...
+ *
+ * This should probably all be replaced with virtual interrupt numbers
+ * that the intc already knows to bind to FIQ.
+ */
+#ifdef CONFIG_ARCH_VERSATILE
+#define USE_VIC_HACK
+#else
+#define USE_GIC_HACK
+#endif
+
 void enable_fiq(int fiq)
 {
+#ifdef USE_VIC_HACK
+	vic_set_fiq(fiq, true);
+#endif
+#ifdef USE_GIC_HACK
+{
+	struct irq_data *irq_data = irq_get_irq_data(fiq);
+
+	extern void gic_set_group_irq(struct irq_data *d, int group);
+	gic_set_group_irq(irq_data, 0);
+}
+#endif
+
 	enable_irq(fiq + fiq_start);
 }
 
 void disable_fiq(int fiq)
 {
 	disable_irq(fiq + fiq_start);
+
+#ifdef USE_VIC_HACK
+	vic_set_fiq(fiq, false);
+#endif
+#ifdef USE_GIC_HACK
+{
+	struct irq_data *irq_data = irq_get_irq_data(fiq);
+
+	extern void gic_set_group_irq(struct irq_data *d, int group);
+	gic_set_group_irq(irq_data, 1);
+}
+#endif
 }
 
 void eoi_fiq(int fiq)
