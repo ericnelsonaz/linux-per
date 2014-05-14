@@ -32,6 +32,9 @@
 #define GIC_DIST_CONFIG			0xc00
 #define GIC_DIST_SOFTINT		0xf00
 
+#define GIC_DIST_CTRL_ENABLE_GRP0_BIT	(1 << 0)
+#define GIC_DIST_CTRL_ENABLE_GRP1_BIT	(1 << 1)
+
 #define GICH_HCR			0x0
 #define GICH_VTR			0x4
 #define GICH_VMCR			0x8
