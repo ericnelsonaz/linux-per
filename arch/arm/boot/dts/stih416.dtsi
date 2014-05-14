@@ -88,7 +88,7 @@
 			compatible	= "st,asc";
 			status 		= "disabled";
 			reg		= <0xfe531000 0x2c>;
-			interrupts	= <0 210 0>;
+			interrupts	= <0 210 0>, <0 210 0>;
 			pinctrl-names 	= "default";
 			pinctrl-0 	= <&pinctrl_sbc_serial1>;
 			clocks          = <&CLK_SYSIN>;
