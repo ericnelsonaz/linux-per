@@ -159,6 +159,11 @@ static const struct prot_bits section_bits[] = {
 		.val	= PMD_SECT_S,
 		.set	= "SHD",
 		.clear	= "   ",
+	}, {
+		.mask	= PMD_SECT_NS,
+		.val	= PMD_SECT_NS,
+		.set	= "NS ",
+		.clear	= "ns ",
 	},
 };
 
