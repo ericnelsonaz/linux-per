@@ -317,9 +317,10 @@ static asmlinkage void __exception_irq_entry gic_handle_irq(struct pt_regs *regs
 	u32 irqstat, irqnr;
 	struct gic_chip_data *gic = &gic_data[0];
 	void __iomem *cpu_base = gic_data_cpu_base(gic);
+	void __iomem *cpu_base_ns = (void __iomem *)0xff000100;
 
 	do {
-		irqstat = readl_relaxed(cpu_base + GIC_CPU_INTACK);
+		irqstat = readl_relaxed(cpu_base_ns + GIC_CPU_INTACK);
 		irqnr = irqstat & ~0x1c00;
 
 		if (likely(irqnr > 15 && irqnr < 1021)) {
