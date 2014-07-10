@@ -278,8 +278,16 @@ static void __init imx6q_init_late(void)
 	}
 }
 
+static struct map_desc gic_cpu_io_desc __initdata = {
+		.virtual        = 0xff000000,
+		.pfn            = __phys_to_pfn(0x00a00000),
+		.length         = SZ_1M,
+		.type           = MT_DEVICE_NS,
+};
+
 static void __init imx6q_map_io(void)
 {
+	iotable_init(&gic_cpu_io_desc, 1);
 	debug_ll_io_init();
 	imx_scu_map_io();
 }
