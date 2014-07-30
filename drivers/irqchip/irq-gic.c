@@ -184,6 +184,8 @@ static void gic_unmask_irq(struct irq_data *d)
 	u32 pri_mask = 1 << (7 + ((gic_irq(d) % 4) * 8));
 	u32 pri_val;
 
+	bool enabled = false;
+
 	raw_spin_lock(&irq_controller_lock);
 
 	grp_val = readl_relaxed(gic_dist_base(d) + GIC_DIST_IGROUP + grp_reg);
@@ -197,8 +199,23 @@ static void gic_unmask_irq(struct irq_data *d)
 		pri_val &= ~pri_mask;
 	}
 
+	/*
+	 * As recommended by the spec, disable the interrupt before changing
+	 * the configuration
+	 */
+	if (readl_relaxed(gic_dist_base(d) + GIC_DIST_ENABLE_SET + grp_reg) & grp_mask) {
+		writel_relaxed(grp_mask, gic_dist_base(d) + GIC_DIST_ENABLE_CLEAR + grp_reg);
+		enabled = true;
+	}
+
 	writel_relaxed(grp_val, gic_dist_base(d) + GIC_DIST_IGROUP + grp_reg);
 	writel_relaxed(pri_val, gic_dist_base(d) + GIC_DIST_PRI + pri_reg);
+
+	/* Clean pending interrupt. */
+	writel(grp_val, gic_dist_base(d) + GIC_DIST_PENDING_CLEAR + grp_reg);
+
+	if (enabled)
+		writel_relaxed(grp_mask, gic_dist_base(d) + GIC_DIST_ENABLE_SET + grp_reg);
 
 	raw_spin_unlock(&irq_controller_lock);
 }
