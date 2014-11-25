@@ -471,6 +471,7 @@ int otg_hnp_polling(struct otg_fsm *fsm)
 	}
 
 	fsm->host_req_flag = 0;
+
 	/* Get host request flag from connected USB device */
 	retval = usb_control_msg(udev,
 				usb_rcvctrlpipe(udev, 0),
