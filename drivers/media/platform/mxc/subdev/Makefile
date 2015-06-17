@@ -13,3 +13,7 @@ ov5647_camera_mipi-objs := ov5647_mipi.o
 obj-$(CONFIG_MXC_CAMERA_OV5647_MIPI) += ov5647_camera_mipi.o
 
 obj-$(CONFIG_MXC_VADC) += mxc_vadc.o
+
+ov5642_camera-objs := ov5642.o
+obj-$(CONFIG_MXC_CAMERA_OV5640) += ov5642_camera.o
+
