@@ -1284,9 +1284,9 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 		aif_rx_state = snd_soc_read(codec,
 					    base + ARIZONA_AIF_RX_ENABLES);
 		/* Disable AIF TX/RX before reconfiguring it */
-		regmap_update_bits(codec,
+		regmap_update_bits(arizona->regmap,
 				    base + ARIZONA_AIF_TX_ENABLES, 0xff, 0x0);
-		regmap_update_bits(codec,
+		regmap_update_bits(arizona->regmap,
 				    base + ARIZONA_AIF_RX_ENABLES, 0xff, 0x0);
 	}
 
@@ -1314,9 +1314,9 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 restore_aif:
 	if (reconfig) {
 		/* Restore AIF TX/RX state */
-		regmap_update_bits(codec, base + ARIZONA_AIF_TX_ENABLES,
+		regmap_update_bits(arizona->regmap, base + ARIZONA_AIF_TX_ENABLES,
 				    0xff, aif_tx_state);
-		regmap_update_bits(codec, base + ARIZONA_AIF_RX_ENABLES,
+		regmap_update_bits(arizona->regmap, base + ARIZONA_AIF_RX_ENABLES,
 				    0xff, aif_rx_state);
 	}
 	return ret;
