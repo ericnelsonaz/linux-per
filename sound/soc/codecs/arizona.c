@@ -61,6 +61,11 @@
 #define ARIZONA_FLL_MIN_OUTDIV 2
 #define ARIZONA_FLL_MAX_OUTDIV 7
 
+#define ARIZONA_FMT_DSP_MODE_A          0
+#define ARIZONA_FMT_DSP_MODE_B          1
+#define ARIZONA_FMT_I2S_MODE            2
+#define ARIZONA_FMT_LEFT_JUSTIFIED_MODE 3
+
 #define arizona_fll_err(_fll, fmt, ...) \
 	dev_err(_fll->arizona->dev, "FLL%d: " fmt, _fll->id, ##__VA_ARGS__)
 #define arizona_fll_warn(_fll, fmt, ...) \
@@ -1191,6 +1196,8 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 	int tdm_width = arizona->tdm_width[dai->id - 1];
 	int tdm_slots = arizona->tdm_slots[dai->id - 1];
 	int bclk, lrclk, wl, frame, bclk_target;
+	bool reconfig;
+	unsigned int aif_tx_state = 0, aif_rx_state = 0;
 
 	if (params_rate(params) % 8000) {
 		rates = arizona_44k1_bclk_rates;
@@ -1220,7 +1227,8 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 
 	/* Force multiple of 2 channels for I2S mode */
 	val = snd_soc_read(codec, base + ARIZONA_AIF_FORMAT);
-	if ((channels & 1) && (val & ARIZONA_AIF1_FMT_MASK)) {
+	val &= ARIZONA_AIF1_FMT_MASK;
+	if ((channels & 1) && (val == ARIZONA_FMT_I2S_MODE)) {
 		arizona_aif_dbg(dai, "Forcing stereo mode\n");
 		bclk_target /= channels;
 		bclk_target *= channels + 1;
@@ -1248,23 +1256,33 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 
 	reconfig = arizona_aif_cfg_changed(codec, base, bclk, lrclk, frame);
 
-	arizona_aif_dbg(dai, "BCLK %dHz LRCLK %dHz lrclk=%d bclk=%d rate=%d wl=%d\n",
-			rates[bclk], rates[bclk] / lrclk, lrclk, snd_soc_params_to_bclk(params), params_rate(params), wl);
+	if (reconfig) {
+		/* Save AIF TX/RX state */
+		aif_tx_state = snd_soc_read(codec,
+					    base + ARIZONA_AIF_TX_ENABLES);
+		aif_rx_state = snd_soc_read(codec,
+					    base + ARIZONA_AIF_RX_ENABLES);
+		/* Disable AIF TX/RX before reconfiguring it */
+		regmap_update_bits(codec,
+				    base + ARIZONA_AIF_TX_ENABLES, 0xff, 0x0);
+		regmap_update_bits(codec,
+				    base + ARIZONA_AIF_RX_ENABLES, 0xff, 0x0);
+	}
 
 	ret = arizona_hw_params_rate(substream, params, dai);
 	if (ret != 0)
-		return ret;
+		goto restore_aif;
 
-	regmap_update_bits_async(arizona->regmap,
+	regmap_update_bits(arizona->regmap,
 				 base + ARIZONA_AIF_BCLK_CTRL,
 				 ARIZONA_AIF1_BCLK_FREQ_MASK, bclk);
-	regmap_update_bits_async(arizona->regmap,
+	regmap_update_bits(arizona->regmap,
 				 base + ARIZONA_AIF_TX_BCLK_RATE,
 				 ARIZONA_AIF1TX_BCPF_MASK, lrclk);
-	regmap_update_bits_async(arizona->regmap,
+	regmap_update_bits(arizona->regmap,
 				 base + ARIZONA_AIF_RX_BCLK_RATE,
 				 ARIZONA_AIF1RX_BCPF_MASK, lrclk);
-	regmap_update_bits_async(arizona->regmap,
+	regmap_update_bits(arizona->regmap,
 				 base + ARIZONA_AIF_FRAME_CTRL_1,
 				 ARIZONA_AIF1TX_WL_MASK |
 				 ARIZONA_AIF1TX_SLOT_LEN_MASK, frame);
@@ -1272,7 +1290,15 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 			   ARIZONA_AIF1RX_WL_MASK |
 			   ARIZONA_AIF1RX_SLOT_LEN_MASK, frame);
 
-	return 0;
+restore_aif:
+	if (reconfig) {
+		/* Restore AIF TX/RX state */
+		regmap_update_bits(codec, base + ARIZONA_AIF_TX_ENABLES,
+				    0xff, aif_tx_state);
+		regmap_update_bits(codec, base + ARIZONA_AIF_RX_ENABLES,
+				    0xff, aif_rx_state);
+	}
+	return ret;
 }
 
 static const char *arizona_dai_clk_str(int clk_id)
