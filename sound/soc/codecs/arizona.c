@@ -1200,6 +1200,8 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 		limit = ARRAY_SIZE(arizona_48k_bclk_rates);
 	}
 
+	wl = snd_pcm_format_width(params_format(params));
+
 	if (tdm_slots) {
 		arizona_aif_dbg(dai, "Configuring for %d %d bit TDM slots\n",
 				tdm_slots, tdm_width);
@@ -1207,6 +1209,7 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 		channels = tdm_slots;
 	} else {
 		bclk_target = snd_soc_params_to_bclk(params);
+		tdm_width = wl;
 	}
 
 	if (chan_limit && chan_limit < channels) {
@@ -1238,8 +1241,12 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 
 	lrclk = rates[bclk] / params_rate(params);
 
-	wl = snd_pcm_format_width(params_format(params));
-	frame = wl << ARIZONA_AIF1TX_WL_SHIFT | (lrclk >> 1);
+	arizona_aif_dbg(dai, "BCLK %dHz LRCLK %dHz\n",
+			rates[bclk], rates[bclk] / lrclk);
+
+	frame = wl << ARIZONA_AIF1TX_WL_SHIFT | tdm_width;
+
+	reconfig = arizona_aif_cfg_changed(codec, base, bclk, lrclk, frame);
 
 	arizona_aif_dbg(dai, "BCLK %dHz LRCLK %dHz lrclk=%d bclk=%d rate=%d wl=%d\n",
 			rates[bclk], rates[bclk] / lrclk, lrclk, snd_soc_params_to_bclk(params), params_rate(params), wl);
