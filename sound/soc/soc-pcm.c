@@ -201,6 +201,7 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 		runtime->hw.channels_max =
 			min(codec_dai_drv->playback.channels_max,
 				cpu_dai_drv->playback.channels_max);
+printk("codec_dai_drv-> %d || cpu_dai_drv ->%d\n", codec_dai_drv->playback.channels_max, cpu_dai_drv->playback.channels_max);
 		runtime->hw.formats =
 			codec_dai_drv->playback.formats & cpu_dai_drv->playback.formats;
 		runtime->hw.rates =
@@ -271,12 +272,12 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 			goto config_err;
 	}
 
-	pr_debug("ASoC: %s <-> %s info:\n",
+	printk("ASoC: %s <-> %s info:\n",
 			codec_dai->name, cpu_dai->name);
-	pr_debug("ASoC: rate mask 0x%x\n", runtime->hw.rates);
-	pr_debug("ASoC: min ch %d max ch %d\n", runtime->hw.channels_min,
+	printk("ASoC: rate mask 0x%x\n", runtime->hw.rates);
+	printk("ASoC: min ch %d max ch %d\n", runtime->hw.channels_min,
 		 runtime->hw.channels_max);
-	pr_debug("ASoC: min rate %d max rate %d\n", runtime->hw.rate_min,
+	printk("ASoC: min rate %d max rate %d\n", runtime->hw.rate_min,
 		 runtime->hw.rate_max);
 
 dynamic:
@@ -512,6 +513,7 @@ static int soc_pcm_hw_params(struct snd_pcm_substream *substream,
 
 	if (rtd->dai_link->ops && rtd->dai_link->ops->hw_params) {
 		ret = rtd->dai_link->ops->hw_params(substream, params);
+printk("%s:%d\n",__func__,__LINE__);
 		if (ret < 0) {
 			dev_err(rtd->card->dev, "ASoC: machine hw_params"
 				" failed: %d\n", ret);

@@ -9,7 +9,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
-
+#define DEBUG 1
 #include <linux/device.h>
 #include <linux/slab.h>
 #include <linux/export.h>
@@ -30,6 +30,7 @@
  * register I/O on a specific device.
  */
 #undef LOG_DEVICE
+#define LOG_DEVICE "spi2.0"
 
 static int _regmap_update_bits(struct regmap *map, unsigned int reg,
 			       unsigned int mask, unsigned int val,
@@ -1308,6 +1309,9 @@ int _regmap_write(struct regmap *map, unsigned int reg,
 	}
 
 #ifdef LOG_DEVICE
+if ( reg == 0x51a || reg == 0x519 )
+	dump_stack();
+
 	if (strcmp(dev_name(map->dev), LOG_DEVICE) == 0)
 		dev_info(map->dev, "%x <= %x\n", reg, val);
 #endif

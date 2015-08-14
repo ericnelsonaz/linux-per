@@ -919,6 +919,7 @@ static int arizona_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 	struct arizona *arizona = priv->arizona;
 	int lrclk, bclk, mode, base;
 
+dump_stack();
 	base = dai->driver->base;
 
 	lrclk = 0;
@@ -1230,12 +1231,15 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 
 	wl = snd_pcm_format_width(params_format(params));
 
+printk("tdm_slots %d\n", tdm_slots);
+printk("tdm_width %d\n", tdm_width);
 	if (tdm_slots) {
 		arizona_aif_dbg(dai, "Configuring for %d %d bit TDM slots\n",
 				tdm_slots, tdm_width);
 		bclk_target = tdm_slots * tdm_width * params_rate(params);
 		channels = tdm_slots;
 	} else {
+printk("Going the old way.....\n");
 		bclk_target = snd_soc_params_to_bclk(params);
 		tdm_width = wl;
 	}
@@ -1273,52 +1277,117 @@ static int arizona_hw_params(struct snd_pcm_substream *substream,
 	arizona_aif_dbg(dai, "BCLK %dHz LRCLK %dHz\n",
 			rates[bclk], rates[bclk] / lrclk);
 
+printk("BCLK %dHz LRCLK %dHz\n",
+                        rates[bclk], rates[bclk] / lrclk);
+
 	frame = wl << ARIZONA_AIF1TX_WL_SHIFT | tdm_width;
 
 	reconfig = arizona_aif_cfg_changed(codec, base, bclk, lrclk, frame);
-
+reconfig = true;
 	if (reconfig) {
+printk("RECONFIG ALL OFF  !!!!\n");
 		/* Save AIF TX/RX state */
-		aif_tx_state = snd_soc_read(codec,
-					    base + ARIZONA_AIF_TX_ENABLES);
-		aif_rx_state = snd_soc_read(codec,
-					    base + ARIZONA_AIF_RX_ENABLES);
+		regmap_read(arizona->regmap,
+			    base + ARIZONA_AIF_TX_ENABLES, &aif_tx_state);
+		regmap_read(arizona->regmap,
+			    base + ARIZONA_AIF_RX_ENABLES, &aif_rx_state);
 		/* Disable AIF TX/RX before reconfiguring it */
 		regmap_update_bits(arizona->regmap,
 				    base + ARIZONA_AIF_TX_ENABLES, 0xff, 0x0);
 		regmap_update_bits(arizona->regmap,
 				    base + ARIZONA_AIF_RX_ENABLES, 0xff, 0x0);
 	}
-
+//aif_tx_state = 0x7;
 	ret = arizona_hw_params_rate(substream, params, dai);
 	if (ret != 0)
 		goto restore_aif;
 
-	regmap_update_bits(arizona->regmap,
+	if (reconfig) {
+		regmap_update_bits(arizona->regmap,
 				 base + ARIZONA_AIF_BCLK_CTRL,
 				 ARIZONA_AIF1_BCLK_FREQ_MASK, bclk);
-	regmap_update_bits(arizona->regmap,
+		regmap_update_bits(arizona->regmap,
 				 base + ARIZONA_AIF_TX_BCLK_RATE,
 				 ARIZONA_AIF1TX_BCPF_MASK, lrclk);
-	regmap_update_bits(arizona->regmap,
+		regmap_update_bits(arizona->regmap,
 				 base + ARIZONA_AIF_RX_BCLK_RATE,
 				 ARIZONA_AIF1RX_BCPF_MASK, lrclk);
-	regmap_update_bits(arizona->regmap,
+		regmap_update_bits(arizona->regmap,
 				 base + ARIZONA_AIF_FRAME_CTRL_1,
 				 ARIZONA_AIF1TX_WL_MASK |
 				 ARIZONA_AIF1TX_SLOT_LEN_MASK, frame);
-	regmap_update_bits(arizona->regmap, base + ARIZONA_AIF_FRAME_CTRL_2,
-			   ARIZONA_AIF1RX_WL_MASK |
-			   ARIZONA_AIF1RX_SLOT_LEN_MASK, frame);
+		regmap_update_bits(arizona->regmap, base + ARIZONA_AIF_FRAME_CTRL_2,
+				   ARIZONA_AIF1RX_WL_MASK |
+				   ARIZONA_AIF1RX_SLOT_LEN_MASK, frame);
+	}
 
 restore_aif:
 	if (reconfig) {
+printk("RECONFIG ON  tx: %x | rx: %x !!!!\n", aif_tx_state, aif_rx_state);
 		/* Restore AIF TX/RX state */
 		regmap_update_bits(arizona->regmap, base + ARIZONA_AIF_TX_ENABLES,
 				    0xff, aif_tx_state);
 		regmap_update_bits(arizona->regmap, base + ARIZONA_AIF_RX_ENABLES,
 				    0xff, aif_rx_state);
 	}
+	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_FORMAT,
+ 			  &val);
+ 	if (ret != 0) 
+ 		printk("ERROR reading reg\n");
+ 
+ 	printk("AIF1_FMT [2:0] %x\n", (val & 0x7));
+ 
+ 	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_FRAME_CTRL_1,
+ 			  &val);
+ 	if (ret != 0) 
+ 		printk("ERROR reading reg\n");
+ 
+ 	printk("AIF1 Frame Ctrl 1 %x\n", val );
+ 	printk("AIF1TX_WL [5:0] %d\n", (val & 0x3F00) >> 8 );
+ 	printk("AIF1TX_SLOT_LEN [7:0] %d\n", (val & 0xFF) );
+ 
+ 	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_FRAME_CTRL_2,
+ 			  &val);
+ 	if (ret != 0) 
+ 		printk("ERROR reading reg\n");
+ 
+ 	printk("AIF1 Frame Ctrl 2 %x\n", val );
+ 	printk("AIF1RX_WL [5:0] %d\n", (val & 0x3F00) >> 8 );
+ 	printk("AIF1RX_SLOT_LEN [7:0] %d\n", (val & 0xFF) );
+ 
+ 	for( i = 0;  i < 8; i++ )
+ 	{
+ 		ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_FRAME_CTRL_3 + i,
+ 				  &val);
+ 		if (ret != 0) 
+ 			printk("ERROR reading reg\n");
+ 
+ 		printk("AIF1TX%d_SLOT [5:0] %x\n",i, (val & 0x3F) );
+ 	}
+ 
+ 	for( i = 0;  i < 8; i++ )
+ 	{
+ 		ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_FRAME_CTRL_11 + i,
+ 				  &val);
+ 		if (ret != 0) 
+ 			printk("ERROR reading reg\n");
+ 
+ 		printk("AIF1RX%d_SLOT [5:0] %x\n",i, (val & 0x3F) );
+ 	}
+	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_TX_ENABLES,
+			  &val);
+	if (ret != 0) 
+		printk("ERROR reading reg\n");
+
+	printk("AIF1 Tx Enables [7:0] %x\n", (val & 0xFF) );
+
+	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_RX_ENABLES,
+			  &val);
+	if (ret != 0) 
+		printk("ERROR reading reg\n");
+
+	printk("AIF1 Rx Enables [7:0] %x\n", (val & 0xFF) );
+
 	return ret;
 }
 

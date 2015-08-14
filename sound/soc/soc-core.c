@@ -23,6 +23,8 @@
  *   o Support TDM on PCM and I2S
  */
 
+#define DEBUG 1
+
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
@@ -2105,7 +2107,7 @@ EXPORT_SYMBOL_GPL(snd_soc_free_ac97_codec);
 #ifdef DEBUG
 unsigned last_accesses[4];
 unsigned last_index;
-void spi_print_last_accesses(void);
+//void spi_print_last_accesses(void);
 
 void snd_soc_print_last_accesses(void)
 {
@@ -2118,7 +2120,7 @@ void snd_soc_print_last_accesses(void)
 	v[3] = p[(i + 3) & 3];
 	p[3] = p[2] = p[1] = p[0] = 0;
 	pr_info("%s: %x %x %x %x\n", __func__, v[0], v[1], v[2], v[3]);
-	spi_print_last_accesses();
+	//spi_print_last_accesses();
 }
 EXPORT_SYMBOL_GPL(snd_soc_print_last_accesses);
 #endif
