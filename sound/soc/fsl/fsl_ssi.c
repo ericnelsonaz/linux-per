@@ -1172,7 +1172,7 @@ static struct snd_soc_dai_driver fsl_ssi_ac97_dai = {
 	.playback = {
 		.stream_name = "AC97 Playback",
 		.channels_min = 2,
-		.channels_max = 2,
+		.channels_max = 8,
 		.rates = SNDRV_PCM_RATE_8000_48000,
 		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 	},
