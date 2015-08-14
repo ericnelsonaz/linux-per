@@ -167,12 +167,34 @@ static int wm5102_params(struct snd_pcm_substream *substream,
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *codec_dai = rtd[DAI_AIF1].codec_dai;
+
 	u32 dai_format;
 	int ret;
 	unsigned int channels = params_channels(params);
-
 	/* TODO: The SSI driver should figure this out for us */
+dump_stack();
+printk("%s: Channels %d\n", __func__, channels);
+
 	switch (channels) {
+	case 8:
+		snd_soc_dai_set_tdm_slot(cpu_dai, 0xffffff00, 0xffffff00, 8, 0);
+		break;
+	case 7:
+		snd_soc_dai_set_tdm_slot(cpu_dai, 0xffffff80, 0xffffff80, 7, 0);
+		break;
+	case 6:
+		snd_soc_dai_set_tdm_slot(cpu_dai, 0xffffffc0, 0xffffffc0, 6, 0);
+		break;
+	case 5:
+		snd_soc_dai_set_tdm_slot(cpu_dai, 0xffffffe0, 0xffffffe0, 5, 0);
+		break;
+	case 4:
+		snd_soc_dai_set_tdm_slot(cpu_dai, 0xfffffff0, 0xfffffff0, 4, 0);
+		break;
+	case 3:
+		snd_soc_dai_set_tdm_slot(cpu_dai, 0xfffffff8, 0xfffffff8, 3, 0);
+		break;
 	case 2:
 		snd_soc_dai_set_tdm_slot(cpu_dai, 0xfffffffc, 0xfffffffc, 2, 0);
 		break;
@@ -182,6 +204,8 @@ static int wm5102_params(struct snd_pcm_substream *substream,
 	default:
 		return -EINVAL;
 	}
+
+	snd_soc_dai_set_tdm_slot(codec_dai, 0, 0, channels, 16);
 
 	/* set cpu DAI configuration */
 	dai_format = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_IF |

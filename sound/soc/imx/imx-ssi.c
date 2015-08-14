@@ -80,13 +80,17 @@ static int imx_ssi_set_dai_tdm_slot(struct snd_soc_dai *cpu_dai,
 	sccr = readl(ssi->base + SSI_STCCR);
 	sccr &= ~SSI_STCCR_DC_MASK;
 	sccr |= SSI_STCCR_DC(slots - 1);
+printk("SSI_STCCR %x\n", sccr);
 	writel(sccr, ssi->base + SSI_STCCR);
 
 	sccr = readl(ssi->base + SSI_SRCCR);
 	sccr &= ~SSI_STCCR_DC_MASK;
 	sccr |= SSI_STCCR_DC(slots - 1);
+printk("SSI_SRCCR %x\n", sccr);
 	writel(sccr, ssi->base + SSI_SRCCR);
 
+printk("SSI_STMSK %x\n", tx_mask);
+printk("SSI_SRMSK %x\n", rx_mask);
 	writel(tx_mask, ssi->base + SSI_STMSK);
 	writel(rx_mask, ssi->base + SSI_SRMSK);
 
@@ -153,10 +157,10 @@ static int imx_ssi_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
 		break;
 	case SND_SOC_DAIFMT_CBM_CFM:
 		strcr &= ~(SSI_STCR_TFDIR | SSI_STCR_TXDIR);
-		if ((fmt & SND_SOC_DAIFMT_FORMAT_MASK) == SND_SOC_DAIFMT_I2S) {
-			scr &= ~SSI_I2S_MODE_MASK;
-			scr |= SSI_SCR_I2S_MODE_SLAVE;
-		}
+	//	if ((fmt & SND_SOC_DAIFMT_FORMAT_MASK) == SND_SOC_DAIFMT_I2S) {
+	//		scr &= ~SSI_I2S_MODE_MASK;
+	//		scr |= SSI_SCR_I2S_MODE_SLAVE;
+	//	}
 		break;
 	default:
 		return -EINVAL;
@@ -310,6 +314,7 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 		break;
 	}
 
+printk("SSI_STCCR %x\n", sccr);
 	writel(sccr, ssi->base + reg);
 
 	scr = readl(ssi->base + SSI_SCR);
@@ -320,6 +325,7 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 	} else
 		scr |= SSI_SCR_NET;
 
+printk("SSI_SCR %x\n", scr);
 	writel(scr, ssi->base + SSI_SCR);
 	return 0;
 }
@@ -644,13 +650,13 @@ static struct snd_soc_dai_driver imx_ssi_dai = {
 	.resume = imx_ssi_dai_resume,
 	.playback = {
 		.channels_min = 1,
-		.channels_max = 2,
+		.channels_max = 8,
 		.rates = SNDRV_PCM_RATE_8000_96000,
 		.formats = IMX_SSI_FORMATS,
 	},
 	.capture = {
 		.channels_min = 1,
-		.channels_max = 2,
+		.channels_max = 8,
 		.rates = SNDRV_PCM_RATE_8000_96000,
 		.formats = IMX_SSI_FORMATS,
 	},
