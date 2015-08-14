@@ -186,7 +186,9 @@
 #define DRV_NAME "imx-ssi"
 
 #include <linux/dmaengine.h>
-#include <mach/dma.h>
+#include <linux/platform_data/dma-imx.h>
+#include <sound/dmaengine_pcm.h>
+#include "imx-pcm.h"
 
 struct imx_ssi {
 	struct platform_device *ac97_dev;
@@ -203,21 +205,14 @@ struct imx_ssi {
 	void (*ac97_reset) (struct snd_ac97 *ac97);
 	void (*ac97_warm_reset)(struct snd_ac97 *ac97);
 
-	struct imx_pcm_dma_params	dma_params_rx;
-	struct imx_pcm_dma_params	dma_params_tx;
+	struct snd_dmaengine_dai_dma_data dma_params_rx;
+	struct snd_dmaengine_dai_dma_data dma_params_tx;
+	struct imx_dma_data filter_data_tx;
+	struct imx_dma_data filter_data_rx;
+	struct imx_pcm_fiq_params fiq_params;
 
-
-	struct platform_device *soc_platform_pdev;
-	struct platform_device *soc_platform_pdev_fiq;
+	int fiq_init;
+	int dma_init;
 };
 
-struct snd_soc_platform *imx_ssi_fiq_init(struct platform_device *pdev,
-		struct imx_ssi *ssi);
-void imx_ssi_fiq_exit(struct platform_device *pdev, struct imx_ssi *ssi);
-struct snd_soc_platform *imx_ssi_dma_mx2_init(struct platform_device *pdev,
-		struct imx_ssi *ssi);
-
-int snd_imx_pcm_mmap(struct snd_pcm_substream *substream, struct vm_area_struct *vma);
-int imx_pcm_new(struct snd_soc_pcm_runtime *rtd);
-void imx_pcm_free(struct snd_pcm *pcm);
 #endif /* _IMX_SSI_H */
