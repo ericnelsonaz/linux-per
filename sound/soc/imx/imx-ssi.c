@@ -75,7 +75,7 @@ static int imx_ssi_set_dai_tdm_slot(struct snd_soc_dai *cpu_dai,
 	unsigned int tx_mask, unsigned int rx_mask, int slots, int slot_width)
 {
 	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
-	u32 sccr, scr;
+	u32 sccr;
 
 	sccr = readl(ssi->base + SSI_STCCR);
 	sccr &= ~SSI_STCCR_DC_MASK;
@@ -89,17 +89,11 @@ printk("SSI_STCCR %x\n", sccr);
 printk("SSI_SRCCR %x\n", sccr);
 	writel(sccr, ssi->base + SSI_SRCCR);
 
-	scr = readl(ssi->base + SSI_SCR);
-printk("SSI_SCR %x\n", scr);
 
-	writel(scr|SSI_SCR_SSIEN, ssi->base + SSI_SCR);
 printk("SSI_STMSK %x\n", tx_mask);
 printk("SSI_SRMSK %x\n", rx_mask);
 	writel(tx_mask, ssi->base + SSI_STMSK);
 	writel(rx_mask, ssi->base + SSI_SRMSK);
-	writel(scr, ssi->base + SSI_SCR);
-	scr = readl(ssi->base + SSI_SCR);
-printk("SSI_SCR %x\n", scr);
 
 	if(readl(ssi->base + SSI_STMSK) != rx_mask || readl(ssi->base + SSI_SRMSK) != rx_mask)  
   	{  
@@ -121,13 +115,18 @@ static int imx_ssi_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
 	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
 	u32 strcr = 0, scr;
 
-	scr = readl(ssi->base + SSI_SCR) & ~SSI_SCR_SYN;
+	scr = readl(ssi->base + SSI_SCR) & ~(SSI_SCR_SYN | SSI_SCR_NET);
 
 	/* DAI mode */
 	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
 	case SND_SOC_DAIFMT_I2S:
 		/* data on rising edge of bclk, frame low 1clk before data */
 		strcr |= SSI_STCR_TFSI | SSI_STCR_TEFS | SSI_STCR_TXBIT0;
+		scr |= SSI_SCR_NET;
+		if (ssi->flags & IMX_SSI_USE_I2S_SLAVE) {
+			scr &= ~SSI_I2S_MODE_MASK;
+			scr |= SSI_SCR_I2S_MODE_SLAVE;
+		}
 		break;
 	case SND_SOC_DAIFMT_LEFT_J:
 		/* data on rising edge of bclk, frame high with data */
@@ -296,23 +295,16 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_soc_dai *cpu_dai)
 {
 	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
-	struct imx_pcm_dma_params *dma_data;
-	u32 reg, sccr, scr;
-	unsigned int channels = params_channels(params);
+	u32 reg, sccr;
 
 	/* Tx/Rx config */
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		reg = SSI_STCCR;
-		dma_data = &ssi->dma_params_tx;
-	} else {
+	else
 		reg = SSI_SRCCR;
-		dma_data = &ssi->dma_params_rx;
-	}
 
 	if (ssi->flags & IMX_SSI_SYN)
 		reg = SSI_STCCR;
-
-	snd_soc_dai_set_dma_data(cpu_dai, substream, dma_data);
 
 	sccr = readl(ssi->base + reg) & ~SSI_STCCR_WL_MASK;
 
@@ -329,20 +321,8 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 		break;
 	}
 
-printk("SSI_STCCR %x\n", sccr);
-	writel(sccr, ssi->base + SSI_STCCR);
-	writel(sccr, ssi->base + SSI_SRCCR);
+	writel(sccr, ssi->base + reg);
 
-	scr = readl(ssi->base + SSI_SCR);
-
-	if (channels == 1) {
-		scr &= ~SSI_SCR_NET;
-		scr &= ~SSI_I2S_MODE_MASK;
-	} else
-		scr |= SSI_SCR_NET;
-
-printk("SSI_SCR %x\n", scr);
-	writel(scr, ssi->base + SSI_SCR);
 	return 0;
 }
 
@@ -399,10 +379,11 @@ static int imx_ssi_trigger(struct snd_pcm_substream *substream, int cmd,
 		return -EINVAL;
 	}
 
-	if (!(ssi->flags & IMX_SSI_USE_AC97))
+	//if (!(ssi->flags & IMX_SSI_USE_AC97))
 		/* rx/tx are always enabled to access ac97 registers */
 		writel(scr, ssi->base + SSI_SCR);
 
+printk("SSI_SCR %x\n", scr);
 printk("SSI_SIER %x\n", sier);
 	writel(sier, ssi->base + SSI_SIER);
 
@@ -641,6 +622,10 @@ static int imx_ssi_dai_probe(struct snd_soc_dai *dai)
 		SSI_SFCSR_TFWM1(ssi->dma_params_tx.burstsize) |
 		SSI_SFCSR_RFWM1(ssi->dma_params_rx.burstsize) ;
 	writel(val, ssi->base + SSI_SFCSR);
+
+	/* Tx/Rx config */
+	dai->playback_dma_data = &ssi->dma_params_tx;
+	dai->capture_dma_data = &ssi->dma_params_rx;
 
 	return 0;
 }
