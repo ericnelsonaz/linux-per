@@ -172,6 +172,12 @@ static int wm5102_params(struct snd_pcm_substream *substream,
 	u32 dai_format;
 	int ret;
 	unsigned int channels = params_channels(params);
+	snd_soc_dai_set_tdm_slot(codec_dai, 0, 0, channels, 16);
+
+	/* set cpu DAI configuration */
+	dai_format = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_IF |
+		SND_SOC_DAIFMT_CBM_CFM;
+	ret = snd_soc_dai_set_fmt(cpu_dai, dai_format);
 	/* TODO: The SSI driver should figure this out for us */
 dump_stack();
 printk("%s: Channels %d\n", __func__, channels);
@@ -205,12 +211,6 @@ printk("%s: Channels %d\n", __func__, channels);
 		return -EINVAL;
 	}
 
-	snd_soc_dai_set_tdm_slot(codec_dai, 0, 0, channels, 16);
-
-	/* set cpu DAI configuration */
-	dai_format = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_IF |
-		SND_SOC_DAIFMT_CBM_CFM;
-	ret = snd_soc_dai_set_fmt(cpu_dai, dai_format);
 	if (ret < 0)
 		return ret;
 

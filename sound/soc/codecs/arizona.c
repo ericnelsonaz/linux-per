@@ -919,7 +919,6 @@ static int arizona_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 	struct arizona *arizona = priv->arizona;
 	int lrclk, bclk, mode, base;
 
-dump_stack();
 	base = dai->driver->base;
 
 	lrclk = 0;
@@ -1330,6 +1329,31 @@ printk("RECONFIG ON  tx: %x | rx: %x !!!!\n", aif_tx_state, aif_rx_state);
 		regmap_update_bits(arizona->regmap, base + ARIZONA_AIF_RX_ENABLES,
 				    0xff, aif_rx_state);
 	}
+	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_BCLK_CTRL,
+ 			  &val);
+ 	if (ret != 0) 
+ 		printk("ERROR reading reg\n");
+ 
+ 	printk("AIF1_BLK_CTRL %x\n", val);
+
+	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_TX_PIN_CTRL,
+ 			  &val);
+ 	if (ret != 0) 
+ 		printk("ERROR reading reg\n");
+ 	printk("ARIZONA_AIF_TX_PIN_CTRL %x\n", val);
+ 
+	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_RX_PIN_CTRL,
+ 			  &val);
+ 	if (ret != 0) 
+ 		printk("ERROR reading reg\n");
+ 	printk("ARIZONA_AIF_RX_PIN_CTRL %x\n", val);
+ 
+	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_RATE_CTRL,
+ 			  &val);
+ 	if (ret != 0) 
+ 		printk("ERROR reading reg\n");
+ 	printk("ARIZONA_AIF_RATE_CTRL %x\n", val);
+ 
 	ret = regmap_read(arizona->regmap, base + ARIZONA_AIF_FORMAT,
  			  &val);
  	if (ret != 0) 

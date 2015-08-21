@@ -75,7 +75,7 @@ static int imx_ssi_set_dai_tdm_slot(struct snd_soc_dai *cpu_dai,
 	unsigned int tx_mask, unsigned int rx_mask, int slots, int slot_width)
 {
 	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
-	u32 sccr;
+	u32 sccr, scr;
 
 	sccr = readl(ssi->base + SSI_STCCR);
 	sccr &= ~SSI_STCCR_DC_MASK;
@@ -89,10 +89,25 @@ printk("SSI_STCCR %x\n", sccr);
 printk("SSI_SRCCR %x\n", sccr);
 	writel(sccr, ssi->base + SSI_SRCCR);
 
+	scr = readl(ssi->base + SSI_SCR);
+printk("SSI_SCR %x\n", scr);
+
+	writel(scr|SSI_SCR_SSIEN, ssi->base + SSI_SCR);
 printk("SSI_STMSK %x\n", tx_mask);
 printk("SSI_SRMSK %x\n", rx_mask);
 	writel(tx_mask, ssi->base + SSI_STMSK);
 	writel(rx_mask, ssi->base + SSI_SRMSK);
+	writel(scr, ssi->base + SSI_SCR);
+	scr = readl(ssi->base + SSI_SCR);
+printk("SSI_SCR %x\n", scr);
+
+	if(readl(ssi->base + SSI_STMSK) != rx_mask || readl(ssi->base + SSI_SRMSK) != rx_mask)  
+  	{  
+  		printk("Error mask not set..");  
+  	}   
+  
+  	printk("slots=%d, SRCR=%08x, SCR=%08x, STCR=%08x, SRCR=%08x\n", slots, readl(ssi->base + SSI_SRCR), readl(ssi->base + SSI_SCR), readl(ssi->base + SSI_STCR), readl(ssi->base + SSI_SRCR));  
+	printk("tx_mask=%08x, rx_mask=%08x, STCCR=%08x, SRCCR=%08x, STMSK=%08x, SRMSK=%08x\n", tx_mask , rx_mask  , readl(ssi->base + SSI_STCCR), readl(ssi->base + SSI_SRCCR), readl(ssi->base + SSI_STMSK), readl(ssi->base + SSI_SRMSK));  
 
 	return 0;
 }
@@ -315,7 +330,8 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 	}
 
 printk("SSI_STCCR %x\n", sccr);
-	writel(sccr, ssi->base + reg);
+	writel(sccr, ssi->base + SSI_STCCR);
+	writel(sccr, ssi->base + SSI_SRCCR);
 
 	scr = readl(ssi->base + SSI_SCR);
 
@@ -387,6 +403,7 @@ static int imx_ssi_trigger(struct snd_pcm_substream *substream, int cmd,
 		/* rx/tx are always enabled to access ac97 registers */
 		writel(scr, ssi->base + SSI_SCR);
 
+printk("SSI_SIER %x\n", sier);
 	writel(sier, ssi->base + SSI_SIER);
 
 	return 0;
