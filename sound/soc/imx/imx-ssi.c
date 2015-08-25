@@ -75,13 +75,25 @@ static int imx_ssi_set_dai_tdm_slot(struct snd_soc_dai *cpu_dai,
 	unsigned int tx_mask, unsigned int rx_mask, int slots, int slot_width)
 {
 	struct imx_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
-	u32 sccr;
+	u32 sccr, scr;
+
+printk("Slots %d\n", slots);
+	scr = readl(ssi->base + SSI_SCR);
+printk("SSI_SCR %x\n", scr);
+
+	writel(scr|SSI_SCR_SSIEN, ssi->base + SSI_SCR);
 
 	sccr = readl(ssi->base + SSI_STCCR);
+// TEST 
+sccr = 0x4e300;
 	sccr &= ~SSI_STCCR_DC_MASK;
 	sccr |= SSI_STCCR_DC(slots - 1);
 printk("SSI_STCCR %x\n", sccr);
 	writel(sccr, ssi->base + SSI_STCCR);
+	sccr = readl(ssi->base + SSI_STCCR);
+
+if(readl(ssi->base + SSI_STCCR) != sccr)
+  	printk("Error STCCR NOT SET");  
 
 	sccr = readl(ssi->base + SSI_SRCCR);
 	sccr &= ~SSI_STCCR_DC_MASK;
@@ -94,6 +106,10 @@ printk("SSI_STMSK %x\n", tx_mask);
 printk("SSI_SRMSK %x\n", rx_mask);
 	writel(tx_mask, ssi->base + SSI_STMSK);
 	writel(rx_mask, ssi->base + SSI_SRMSK);
+	writel(scr, ssi->base + SSI_SCR);
+	scr = readl(ssi->base + SSI_SCR);
+printk("SSI_SCR %x\n", scr);
+
 
 	if(readl(ssi->base + SSI_STMSK) != rx_mask || readl(ssi->base + SSI_SRMSK) != rx_mask)  
   	{  
@@ -306,7 +322,7 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 	if (ssi->flags & IMX_SSI_SYN)
 		reg = SSI_STCCR;
 
-	sccr = readl(ssi->base + reg) & ~SSI_STCCR_WL_MASK;
+	sccr = readl(ssi->base + SSI_STCCR) & ~SSI_STCCR_WL_MASK;
 
 	/* DAI data (word) size */
 	switch (params_format(params)) {
@@ -321,8 +337,15 @@ static int imx_ssi_hw_params(struct snd_pcm_substream *substream,
 		break;
 	}
 
-	writel(sccr, ssi->base + reg);
+	writel(sccr, ssi->base + SSI_STCCR);
+	writel(sccr, ssi->base + SSI_SRCCR);
 
+	if(readl(ssi->base + SSI_STCCR) != sccr || readl(ssi->base + SSI_SRCCR) != sccr)  
+  	{  
+  		printk("Error STCCR NOT SET AT ALL..");  
+  	}   
+  
+	printk("STCCR=%08x, SRCCR=%08x\n", readl(ssi->base + SSI_STCCR), readl(ssi->base + SSI_SRCCR) );  
 	return 0;
 }
 
@@ -851,7 +874,7 @@ static int imx_ssi_probe(struct platform_device *pdev)
 	ssi->dma_params_rx.dma_addr = res->start + SSI_SRX0;
 	ssi->dma_params_tx.dma_addr = res->start + SSI_STX0;
 
-	ssi->dma_params_tx.burstsize = 6;
+	ssi->dma_params_tx.burstsize = 4;
 	ssi->dma_params_rx.burstsize = 4;
 
 	ssi->dma_params_tx.peripheral_type = IMX_DMATYPE_SSI_SP;
