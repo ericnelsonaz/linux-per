@@ -690,9 +690,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
 	phy-mode = "rgmii";
-#if 0
 	phy-reset-gpios = GP_PHY_RESET;
-#endif
 	status = "okay";
 
 	#address-cells = <0>;
