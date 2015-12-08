@@ -12,8 +12,8 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
-#include <linux/of_i2c.h>
 #include <linux/clk.h>
+#include <linux/i2c.h>
 #include <sound/soc.h>
 
 #include "../codecs/wm5102.h"
