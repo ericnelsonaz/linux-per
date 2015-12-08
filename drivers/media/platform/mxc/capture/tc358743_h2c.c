@@ -38,7 +38,6 @@
 #include <linux/mutex.h>
 #include <linux/mipi_csi2.h>
 #include <media/v4l2-chip-ident.h>
-#include <media/v4l2-int-device.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/soc.h>
@@ -48,6 +47,7 @@
 //#include <mach/audmux.h>
 #include <linux/slab.h>
 #include "mxc_v4l2_capture.h"
+#include "v4l2-int-device.h"
 
 #define CODEC_CLOCK 16500000
 /* SSI clock sources */
