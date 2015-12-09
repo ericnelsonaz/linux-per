@@ -1843,7 +1843,7 @@ static int wm5102_probe(struct platform_device *pdev)
 	wm5102->core.adsp[0].mem = wm5102_dsp1_regions;
 	wm5102->core.adsp[0].num_mems = ARRAY_SIZE(wm5102_dsp1_regions);
 
-	ret = wm_adsp2_init(&wm5102->core.adsp[0], true);
+	ret = wm_adsp2_init(&wm5102->core.adsp[0], false);
 	if (ret != 0)
 		return ret;
 
