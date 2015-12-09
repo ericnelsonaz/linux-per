@@ -669,6 +669,13 @@
 		clocks = <&clks 200>, <&clks 1>;
 		clock-names = "mclk1", "mclk2";
 		interrupts-extended = GPIRQ_WM5102;
+		wlf,gpio-defaults = <
+			0xffffffff
+			0xffffffff
+			0xffffffff
+			0xffffffff
+			0xffffffff
+		>;
 		wlf,reset = GP_WM5102_RESET;
 		wlf,ldoena = GP_WM5102_LDOENA;
 		wlf,micptt-gpio = GP_WM5102_MIC_PTT_L, GP_WM5102_MIC_PTT_R;
