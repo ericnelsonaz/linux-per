@@ -715,7 +715,6 @@ int init_mmdc_ddr3_settings_imx6q(struct platform_device *busfreq_pdev)
 	return 0;
 }
 
-#ifdef CONFIG_HAVE_IMX_DDRC
 int init_ddrc_ddr_settings(struct platform_device *busfreq_pdev)
 {
 	int ddr_type = imx_ddrc_get_ddr_type();
@@ -782,5 +781,4 @@ int init_ddrc_ddr_settings(struct platform_device *busfreq_pdev)
 
 	return 0;
 }
-#endif
 #endif
