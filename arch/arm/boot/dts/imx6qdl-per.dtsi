@@ -548,7 +548,7 @@
 	sound-wm5102 {
 		compatible = "fsl,imx6q-per-wm5102",
 			     "fsl,imx-audio-wm5102";
-		model = "imx6q-per-wm5102";
+		model = "wm5102";
 		ssi-controller = <&ssi1>;
 		mux-int-port = <1>;
 		mux-ext-port = <6>;
