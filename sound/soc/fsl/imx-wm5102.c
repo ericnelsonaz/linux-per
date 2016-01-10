@@ -155,6 +155,46 @@ static int wm5102_late_probe(struct snd_soc_card *card)
 	return 0;
 }
 
+static int imx_hifi_hw_params(struct snd_pcm_substream *substream,
+				     struct snd_pcm_hw_params *params)
+{
+	struct snd_pcm *pcm = substream->pcm;
+	struct snd_card *card = pcm->card;
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	unsigned int channels = params_channels(params);
+	unsigned int tdm_mask;
+	u32 dai_format;
+	int ret = 0;
+
+	dai_format = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
+		SND_SOC_DAIFMT_CBM_CFM;
+
+	/* set codec DAI configuration */
+	ret = snd_soc_dai_set_fmt(codec_dai, dai_format);
+	if (ret)
+		dev_err(card->dev, "failed to set codec dai fmt: %d\n", ret);
+
+	/* TODO: The SSI driver should figure this out for us */
+dump_stack();
+printk("%s: Channels %d\n", __func__, channels);
+
+	if ((channels > 0) && (channels <= 8)) {
+		tdm_mask = ~((1<<channels)-1);
+		snd_soc_dai_set_tdm_slot(cpu_dai, tdm_mask, tdm_mask,
+					 channels, 0);
+	}
+	else
+		ret = -EINVAL;
+
+	return ret;
+}
+
+static struct snd_soc_ops imx_hifi_ops = {
+	.hw_params = imx_hifi_hw_params,
+};
+
 static struct snd_soc_dai_link dai_wm5102[] = {
 	{
 		.name = "HiFi",
@@ -163,6 +203,7 @@ static struct snd_soc_dai_link dai_wm5102[] = {
 		.codec_name = "wm5102-codec",
 		.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF
 				| SND_SOC_DAIFMT_CBM_CFM,
+		.ops = &imx_hifi_ops,
 	},
 };
 
