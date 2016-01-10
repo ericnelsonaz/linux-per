@@ -177,11 +177,9 @@ static int imx_hifi_hw_params(struct snd_pcm_substream *substream,
 		dev_err(card->dev, "failed to set codec dai fmt: %d\n", ret);
 
 	/* TODO: The SSI driver should figure this out for us */
-dump_stack();
-printk("%s: Channels %d\n", __func__, channels);
-
 	if ((channels > 0) && (channels <= 8)) {
-		tdm_mask = ~((1<<channels)-1);
+		tdm_mask = ((1<<channels)-1);
+printk("%s: %d channels, mask 0x%x\n", __func__, channels, tdm_mask);
 		snd_soc_dai_set_tdm_slot(cpu_dai, tdm_mask, tdm_mask,
 					 channels, 0);
 	}
