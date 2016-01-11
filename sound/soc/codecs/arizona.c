@@ -1383,7 +1383,6 @@ static void arizona_set_channels_to_mask(struct snd_soc_dai *dai,
 		slot = ffs(mask) - 1;
 		if (slot < 0)
 			return;
-
 		regmap_write(arizona->regmap, base + i, slot);
 
 		mask &= ~(1 << slot);
@@ -1414,8 +1413,10 @@ static int arizona_set_tdm_slot(struct snd_soc_dai *dai, unsigned int tx_mask,
 
 	arizona_set_channels_to_mask(dai, base + ARIZONA_AIF_FRAME_CTRL_3,
 				     tx_max_chan, tx_mask);
+	regmap_write(arizona->regmap, base + ARIZONA_AIF_TX_ENABLES, tx_mask);
 	arizona_set_channels_to_mask(dai, base + ARIZONA_AIF_FRAME_CTRL_11,
 				     rx_max_chan, rx_mask);
+	regmap_write(arizona->regmap, base + ARIZONA_AIF_RX_ENABLES, rx_mask);
 
 	arizona->tdm_width[dai->id - 1] = slot_width;
 	arizona->tdm_slots[dai->id - 1] = slots;
