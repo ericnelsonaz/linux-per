@@ -15,6 +15,7 @@
 #include <linux/clk.h>
 #include <linux/i2c.h>
 #include <sound/soc.h>
+#include <sound/pcm_params.h>
 
 #include "../codecs/wm5102.h"
 #include "imx-audmux.h"
@@ -164,6 +165,7 @@ static int imx_hifi_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	unsigned int channels = params_channels(params);
+	unsigned int slot_width = snd_pcm_format_width(params_format(params));
 	unsigned int tdm_mask;
 	u32 dai_format;
 	int ret = 0;
@@ -179,9 +181,10 @@ static int imx_hifi_hw_params(struct snd_pcm_substream *substream,
 	/* TODO: The SSI driver should figure this out for us */
 	if ((channels > 0) && (channels <= 8)) {
 		tdm_mask = ((1<<channels)-1);
-printk("%s: %d channels, mask 0x%x\n", __func__, channels, tdm_mask);
 		snd_soc_dai_set_tdm_slot(cpu_dai, tdm_mask, tdm_mask,
-					 channels, 0);
+					 channels, slot_width);
+		snd_soc_dai_set_tdm_slot(codec_dai, tdm_mask, tdm_mask,
+					 channels, slot_width);
 	}
 	else
 		ret = -EINVAL;
