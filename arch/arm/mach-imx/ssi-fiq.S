@@ -44,6 +44,13 @@
 imx_ssi_fiq_start:
 		ldr r12, .L_imx_ssi_fiq_base
 
+		mov r13, #0x020c
+		add r13, #0xc000
+		add r13, #0x0068
+		ldr r11, [r13]
+		add r11, #1
+		str r11, [r13]
+
 		/* TX */
 		ldr r13, .L_imx_ssi_fiq_tx_buffer
 
