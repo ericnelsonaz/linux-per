@@ -811,6 +811,10 @@
 
 &ssi1 {
 	fsl,mode = "i2s-slave";
+	dmas = <&sdma 37 1 0>,		/* not SDMA mode */
+               <&sdma 38 1 0>;
+	fsl,fifo-depth = <0>;		/* disable FIFO */
+	fsl,fiq-stream-filter;		/* disable DMA */
 	status = "okay";
 };
 
