@@ -397,7 +397,7 @@ static void fsl_ssi_rxtx_config(struct fsl_ssi_private *ssi_private,
 
 	if (enable) {
 		regmap_update_bits(regs, CCSR_SSI_SIER,
-				vals->rx.sier | vals->tx.sier,
+				0x1ffffff,
 				vals->rx.sier | vals->tx.sier);
 		regmap_update_bits(regs, CCSR_SSI_SRCR,
 				vals->rx.srcr | vals->tx.srcr,
@@ -411,7 +411,7 @@ static void fsl_ssi_rxtx_config(struct fsl_ssi_private *ssi_private,
 		regmap_update_bits(regs, CCSR_SSI_STCR,
 				vals->rx.stcr | vals->tx.stcr, 0);
 		regmap_update_bits(regs, CCSR_SSI_SIER,
-				vals->rx.sier | vals->tx.sier, 0);
+				0x1ffffff, 0);
 	}
 }
 
