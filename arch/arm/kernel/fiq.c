@@ -53,6 +53,8 @@
 	})
 
 static unsigned long no_fiq_insn;
+static int numenable = 0;
+static int numdisable = 0;
 
 /* Default reacquire function
  * - we always relinquish FIQ control
@@ -76,8 +78,8 @@ static struct fiq_handler *current_fiq = &default_owner;
 int show_fiq_list(struct seq_file *p, int prec)
 {
 	if (current_fiq != &default_owner)
-		seq_printf(p, "%*s:              %s\n", prec, "FIQ",
-			current_fiq->name);
+		seq_printf(p, "%*s:              %s (+%d,-%d)\n", prec, "FIQ",
+			current_fiq->name, numenable, numdisable);
 
 	return 0;
 }
@@ -131,11 +133,13 @@ static int fiq_start;
 
 void enable_fiq(int fiq)
 {
+	++numenable;
 	enable_irq(fiq + fiq_start);
 }
 
 void disable_fiq(int fiq)
 {
+	++numdisable;
 	disable_irq(fiq + fiq_start);
 }
 
