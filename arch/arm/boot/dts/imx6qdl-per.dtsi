@@ -744,10 +744,10 @@
 
 &i2c1b {
 	anx7814: anx7814@38 {
-#ifdef CONFIG_DRM_ANX78XX
+#if defined(CONFIG_DRM_ANX78XX) || defined(CONFIG_DRM_ANX78XX_MODULE)
 		compatible = "analogix,anx7814";
-		pd-gpios = GP_ANX7814_P_DWN;
-		reset-gpios = GP_ANX7814_RESET;
+		pd-gpios = GP_ANX7814_P_DWN;		/* GP1:13/SD2_DAT2 */
+		reset-gpios = GP_ANX7814_RESET;		/* GP2:5/NANDF_D5 */
 #else
 		/* use out-of-tree slimport driver from Analogix */
 		compatible = "anx7816";
@@ -758,7 +758,7 @@
 		reg = <0x38>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_i2c1c_anx7814>;
-		analogix,cbl-det-gpio = GP_ANX7814_CBL_DET;
+		analogix,cbl-det-gpio = GP_ANX7814_CBL_DET;	/* GP2:3/NANDF_D3 */
 		analogix,external-ldo-control= <0>;
 		analogix,v10-ctrl-gpio = <&reg_1p0v>;
 		analogix,v33-ctrl-gpio = <&reg_3p3v>;
